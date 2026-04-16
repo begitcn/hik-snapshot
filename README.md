@@ -303,6 +303,64 @@ docker run -d \
   hik-snapshot-service:v1
 ```
 
+### 镜像导出与导入
+
+适用于离线环境部署，将镜像打包后在目标机器导入。
+
+#### 导出镜像
+
+```bash
+# 导出为 tar 文件
+docker save hik-snapshot-service:v1 -o hik-snapshot-service-v1.tar
+
+# 压缩导出（推荐，文件更小）
+docker save hik-snapshot-service:v1 | gzip > hik-snapshot-service-v1.tar.gz
+
+# 查看导出文件大小
+ls -lh hik-snapshot-service-v1.tar*
+```
+
+#### 导入镜像
+
+```bash
+# 从 tar 文件导入
+docker load -i hik-snapshot-service-v1.tar
+
+# 从压缩文件导入
+docker load -i hik-snapshot-service-v1.tar.gz
+
+# 或者使用 gunzip 解压后导入
+gunzip -c hik-snapshot-service-v1.tar.gz | docker load
+
+# 验证导入成功
+docker images | grep hik-snapshot-service
+```
+
+#### 离线部署示例
+
+```bash
+# === 在有网络的机器上 ===
+# 1. 构建镜像
+docker build -t hik-snapshot-service:v1 .
+
+# 2. 导出镜像
+docker save hik-snapshot-service:v1 | gzip > hik-snapshot-service-v1.tar.gz
+
+# 3. 传输文件到目标机器（示例）
+scp hik-snapshot-service-v1.tar.gz user@target-server:/opt/images/
+
+# === 在目标机器上 ===
+# 4. 导入镜像
+docker load -i /opt/images/hik-snapshot-service-v1.tar.gz
+
+# 5. 运行容器
+docker run -d \
+  --name hik-snapshot \
+  -p 9876:9876 \
+  --restart unless-stopped \
+  hik-snapshot-service:v1
+```
+
 ### Docker Compose 部署
 
 ```yaml
